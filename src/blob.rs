@@ -36,18 +36,21 @@ use value::Value;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Blob {
     title: String,
-    content: Value
+    content: Value,
 }
 
 impl Blob {
     /// Create a new NBT file format representation with the given name.
     pub fn new(title: String) -> Blob {
         let map: HashMap<String, Value> = HashMap::new();
-        Blob { title: title, content: Value::Compound(map) }
+        Blob {
+            title: title,
+            content: Value::Compound(map),
+        }
     }
 
     /// Extracts an `Blob` object from an `io::Read` source.
-    pub fn from_reader(mut src: &mut io::Read) -> Result<Blob> {
+    pub fn from_reader(src: &mut io::Read) -> Result<Blob> {
         let header = try!(Value::read_header(src));
         // Although it would be possible to read NBT format files composed of
         // arbitrary objects using the current API, by convention all files
@@ -56,7 +59,10 @@ impl Blob {
             return Err(Error::NoRootCompound);
         }
         let content = try!(Value::from_reader(header.0, src));
-        Ok(Blob { title: header.1, content: content })
+        Ok(Blob {
+            title: header.1,
+            content: content,
+        })
     }
 
     /// Extracts an `Blob` object from an `io::Read` source that is
@@ -100,7 +106,9 @@ impl Blob {
     /// heterogeneous elements is passed in, because this is illegal in the NBT
     /// file format.
     pub fn insert<V>(&mut self, name: String, value: V) -> Result<()>
-           where V: Into<Value> {
+    where
+        V: Into<Value>,
+    {
         // The follow prevents `List`s with heterogeneous tags from being
         // inserted into the file. It would be nicer to return an error, but
         // this would depart from the `HashMap` API for `insert`.
@@ -110,7 +118,7 @@ impl Blob {
                 let first_id = vals[0].id();
                 for nbt in vals {
                     if nbt.id() != first_id {
-                        return Err(Error::HeterogeneousList)
+                        return Err(Error::HeterogeneousList);
                     }
                 }
             }
@@ -136,7 +144,7 @@ impl<'a> Index<&'a str> for Blob {
     fn index<'b>(&'b self, s: &'a str) -> &'b Value {
         match self.content {
             Value::Compound(ref v) => v.get(s).unwrap(),
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
