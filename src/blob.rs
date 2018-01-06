@@ -51,14 +51,14 @@ impl Blob {
 
     /// Extracts an `Blob` object from an `io::Read` source.
     pub fn from_reader(src: &mut io::Read) -> Result<Blob> {
-        let header = try!(Value::read_header(src));
+        let header = Value::read_header(src)?;
         // Although it would be possible to read NBT format files composed of
         // arbitrary objects using the current API, by convention all files
         // have a top-level Compound.
         if header.0 != 0x0a {
             return Err(Error::NoRootCompound);
         }
-        let content = try!(Value::from_reader(header.0, src));
+        let content = Value::from_reader(header.0, src)?;
         Ok(Blob {
             title: header.1,
             content: content,
@@ -69,7 +69,7 @@ impl Blob {
     /// compressed using the Gzip format.
     pub fn from_gzip(src: &mut io::Read) -> Result<Blob> {
         // Reads the gzip header, and fails if it is incorrect.
-        let mut data = try!(GzDecoder::new(src));
+        let mut data = GzDecoder::new(src)?;
         Blob::from_reader(&mut data)
     }
 

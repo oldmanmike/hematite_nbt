@@ -51,7 +51,7 @@ where
     /// Write the NBT tag and an optional header to the underlying writer.
     #[inline]
     fn write_header(&mut self, tag: i8, header: Option<&str>) -> Result<()> {
-        try!(raw::write_bare_byte(&mut self.writer, tag));
+        raw::write_bare_byte(&mut self.writer, tag)?;
         match header {
             None => raw::write_bare_short(&mut self.writer, 0).map_err(From::from),
             Some(h) => raw::write_bare_string(&mut self.writer, h).map_err(From::from),
@@ -81,8 +81,8 @@ where
             State::Bare => Ok(()),
             State::Named(header) => self.outer.write_header(tag, Some(header)),
             State::ListHead(s) => {
-                try!(raw::write_bare_byte(&mut self.outer.writer, tag));
-                try!(raw::write_bare_int(&mut self.outer.writer, s as i32));
+                raw::write_bare_byte(&mut self.outer.writer, tag)?;
+                raw::write_bare_int(&mut self.outer.writer, s as i32)?;
                 self.state = State::Bare;
                 Ok(())
             }
@@ -111,7 +111,7 @@ where
             outer: self.outer,
             state: self.state.clone(),
         };
-        try!(value.serialize(&mut ser));
+        value.serialize(&mut ser)?;
         self.state = State::Bare;
         Ok(())
     }
@@ -167,7 +167,7 @@ where
     #[inline]
     fn serialize_unit_struct(self, _name: &'static str) -> Result<()> {
         let header = self.header; // Circumvent strange borrowing errors.
-        try!(self.write_header(0x0a, header));
+        self.write_header(0x0a, header)?;
         raw::close_nbt(&mut self.writer).map_err(From::from)
     }
 
@@ -192,7 +192,7 @@ where
     #[inline]
     fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct> {
         let header = self.header; // Circumvent strange borrowing errors.
-        try!(self.write_header(0x0a, header));
+        self.write_header(0x0a, header)?;
         Ok(Compound {
             outer: self,
             state: State::Bare,
@@ -221,25 +221,25 @@ where
 
     #[inline]
     fn serialize_i8(self, value: i8) -> Result<()> {
-        try!(self.write_header(0x01));
+        self.write_header(0x01)?;
         raw::write_bare_byte(&mut self.outer.writer, value).map_err(From::from)
     }
 
     #[inline]
     fn serialize_i16(self, value: i16) -> Result<()> {
-        try!(self.write_header(0x02));
+        self.write_header(0x02)?;
         raw::write_bare_short(&mut self.outer.writer, value).map_err(From::from)
     }
 
     #[inline]
     fn serialize_i32(self, value: i32) -> Result<()> {
-        try!(self.write_header(0x03));
+        self.write_header(0x03)?;
         raw::write_bare_int(&mut self.outer.writer, value).map_err(From::from)
     }
 
     #[inline]
     fn serialize_i64(self, value: i64) -> Result<()> {
-        try!(self.write_header(0x04));
+        self.write_header(0x04)?;
         raw::write_bare_long(&mut self.outer.writer, value).map_err(From::from)
     }
 
@@ -265,15 +265,13 @@ where
 
     #[inline]
     fn serialize_f32(self, value: f32) -> Result<()> {
-        println!("Serializing f32: {:?}", value);
-        try!(self.write_header(0x05));
+        self.write_header(0x05)?;
         raw::write_bare_float(&mut self.outer.writer, value).map_err(From::from)
     }
 
     #[inline]
     fn serialize_f64(self, value: f64) -> Result<()> {
-        println!("Serializing f64: {:?}", value);
-        try!(self.write_header(0x06));
+        self.write_header(0x06)?;
         raw::write_bare_double(&mut self.outer.writer, value).map_err(From::from)
     }
 
@@ -284,7 +282,7 @@ where
 
     #[inline]
     fn serialize_str(self, value: &str) -> Result<()> {
-        try!(self.write_header(0x08));
+        self.write_header(0x08)?;
         raw::write_bare_string(&mut self.outer.writer, value).map_err(From::from)
     }
 
@@ -313,7 +311,7 @@ where
 
     #[inline]
     fn serialize_unit_struct(self, _name: &'static str) -> Result<()> {
-        try!(self.write_header(0x0a));
+        self.write_header(0x0a)?;
         raw::close_nbt(&mut self.outer.writer).map_err(From::from)
     }
 
@@ -352,7 +350,7 @@ where
     #[inline]
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq> {
         if let Some(l) = len {
-            try!(self.write_header(0x09));
+            self.write_header(0x09)?;
             Ok(Compound {
                 outer: self.outer,
                 state: State::ListHead(l),
@@ -394,7 +392,7 @@ where
 
     #[inline]
     fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct> {
-        try!(self.write_header(0x0a));
+        self.write_header(0x0a)?;
         Ok(Compound {
             outer: self.outer,
             state: State::Bare,
